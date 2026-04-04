@@ -1,11 +1,12 @@
 import streamlit as st
 import requests
 import json
+import html
 
 API_BASE = "http://localhost:8000/api/v1"
 
 st.set_page_config(
-    page_title="UniStudy RAG",
+    page_title="AI QuizCraft",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -298,14 +299,12 @@ def render_message(msg: dict):
                 st.markdown(
                     f"""<div class="result-card">
                         <div class="result-meta">
-                            📁 <b>{res['course']}</b> &nbsp;·&nbsp;
-                            {res['doc_type'].upper()} &nbsp;·&nbsp;
-                            {res['filename']}
+                            📁 <b>{html.escape(res['course'])}</b> &nbsp;·&nbsp; {res['doc_type'].upper()} &nbsp;·&nbsp; {html.escape(res['filename'])}
                             {f"&nbsp;·&nbsp;{res['year']}" if res.get('year') else ""}
                             {f"&nbsp;·&nbsp;{source_link}" if source_link else ""}
                             <span class="result-score">{score_pct}% match</span>
                         </div>
-                                <div style="color:#cbd5e1;font-size:0.85rem;white-space:pre-wrap">{res['content']}</div>
+                                <div style="color:#cbd5e1;font-size:0.85rem;white-space:pre-wrap">{html.escape(res['content'])}</div>
                     </div>""",
                     unsafe_allow_html=True,
                 )

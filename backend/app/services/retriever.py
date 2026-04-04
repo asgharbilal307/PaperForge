@@ -37,12 +37,6 @@ def retrieve_documents(
     year: Optional[str] = None,
     top_k: int = 5,
 ) -> RetrieveResponse:
-    """
-    Embed the query and search Qdrant.
-    - If course/doc_type/year are provided they act as filters.
-    - If none are provided the search is global across all indexed files.
-    - Score threshold is intentionally low (0.2) so fuzzy matches still surface.
-    """
     settings = get_settings()
     client = get_qdrant_client()
 
@@ -58,11 +52,20 @@ def retrieve_documents(
         score_threshold=0.2,
     )
 
-    chunks = []
+    # Deduplicate by raw_path — one result per file
+    seen_paths = {}
     for hit in results:
+        path = hit.payload.get("raw_path", "")
+        if path not in seen_paths or hit.score > seen_paths[path].score:
+            seen_paths[path] = hit
+
+    chunks = []
+    for hit in seen_paths.values():
         p = hit.payload
+        # Fetch the FULL document content by reassembling all chunks
+        full_content = fetch_full_document(p.get("raw_path", ""))
         chunks.append(DocumentChunk(
-            content=p.get("content", ""),
+            content=full_content,  # full document now
             course=p.get("course", "Unknown"),
             doc_type=p.get("doc_type", "other"),
             filename=p.get("filename", ""),
@@ -71,9 +74,32 @@ def retrieve_documents(
             source_url=p.get("source_url"),
         ))
 
+    # Sort by score descending
+    chunks.sort(key=lambda c: c.score, reverse=True)
+
     return RetrieveResponse(
         intent="retrieve",
         query=query,
         results=chunks,
         total=len(chunks),
     )
+
+# Add this new function
+def fetch_full_document(raw_path: str) -> str:
+    """Fetch all chunks of a file and reassemble in order."""
+    settings = get_settings()
+    client = get_qdrant_client()
+
+    results, _ = client.scroll(
+        collection_name=settings.qdrant_collection,
+        scroll_filter=Filter(
+            must=[FieldCondition(key="raw_path", match=MatchValue(value=raw_path))]
+        ),
+        limit=500,
+        with_payload=True,
+        with_vectors=False,
+    )
+
+    # Sort by chunk index and join
+    chunks = sorted(results, key=lambda r: r.payload.get("chunk_index", 0))
+    return "\n".join(r.payload.get("content", "") for r in chunks)
