@@ -1,4 +1,4 @@
-#PaperForge
+# **PaperForge** 🛠️
 
 A smart university study assistant that indexes course materials and helps with:
 
