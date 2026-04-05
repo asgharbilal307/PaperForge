@@ -1,6 +1,5 @@
 #PaperForge
 
-<<<<<<< Updated upstream
 A smart university study assistant that indexes course materials and helps with:
 
 - Semantic retrieval of past exams (quiz/mid/final/etc.)
