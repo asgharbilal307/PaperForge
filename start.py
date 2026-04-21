@@ -1,12 +1,3 @@
-"""
-start.py — Launch both FastAPI backend and Streamlit frontend in one command.
-
-Usage:
-    python start.py
-
-Press Ctrl+C to stop both.
-"""
-
 import subprocess
 import sys
 import os
@@ -27,9 +18,7 @@ def main():
         cwd=BACKEND_DIR,
     )
     procs.append(backend)
-    print("✅ Backend starting at http://localhost:8000")
 
-    # Small delay so FastAPI is ready before Streamlit opens
     time.sleep(2)
 
     frontend = subprocess.Popen(
@@ -49,7 +38,6 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    # Wait — exit if either process dies unexpectedly
     while True:
         for p in procs:
             ret = p.poll()
